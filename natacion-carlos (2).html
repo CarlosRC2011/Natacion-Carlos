@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Natación Carlos</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050E1A;--surface:#0B1929;--surface2:#112236;--border:#1E3A5F;--accent:#00C6FF;--accent2:#0072FF;--gold:#FFD700;--red:#FF4D6D;--green:#00E5A0;--text:#E8F4FF;--muted:#5A8AAA;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+#loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;gap:16px;}
+.loading-logo{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;letter-spacing:4px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:.8rem;color:var(--muted);letter-spacing:2px;}
+#topbar{position:fixed;top:0;left:0;right:0;height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.hamburger{background:none;border:none;color:var(--text);cursor:pointer;font-size:1.5rem;padding:6px;}
+.app-name{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+.sync-dot.syncing{background:var(--gold);animation:pulse 1s infinite;}
+.sync-dot.error{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+#sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:150;backdrop-filter:blur(3px);}
+#sidebar-overlay.show{display:block;}
+#sidebar{position:fixed;top:0;left:-280px;width:260px;height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:160;transition:left .3s ease;}
+#sidebar.open{left:0;}
+.sidebar-logo{padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sidebar-logo-text{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sidebar-logo-sub{font-size:.6rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+nav{flex:1;padding:12px;overflow-y:auto;}
+.nav-section-label{font-size:.58rem;color:var(--muted);letter-spacing:3px;text-transform:uppercase;padding:10px 8px 4px;margin-top:6px;display:block;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:all .2s;font-size:.88rem;font-weight:500;color:var(--muted);border:1px solid transparent;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:linear-gradient(135deg,rgba(0,198,255,.15),rgba(0,114,255,.08));color:var(--accent);border-color:rgba(0,198,255,.25);}
+.nav-item .icon{font-size:1rem;width:22px;text-align:center;}
+.admin-only-nav{display:none;}
+.admin-only-nav.show{display:block;}
+.sidebar-footer{padding:12px;border-top:1px solid var(--border);}
+.admin-nav-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:all .2s;font-size:.85rem;font-weight:500;color:var(--muted);border:1px solid transparent;width:100%;background:none;}
+.admin-nav-btn:hover{background:var(--surface2);color:var(--gold);}
+.admin-nav-btn.active{background:rgba(255,215,0,.1);color:var(--gold);border-color:rgba(255,215,0,.3);}
+#main{padding-top:56px;min-height:100vh;}
+.content{padding:20px 16px;}
+.page{display:none;}
+.page.active{display:block;animation:fadeUp .3s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.page-header{margin-bottom:20px;}
+.page-title-h{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:2px;color:var(--accent);}
+.page-sub{font-size:.8rem;color:var(--muted);margin-top:2px;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.stat-card.gold::before{background:var(--gold);}
+.stat-card.green::before{background:var(--green);}
+.stat-card.red::before{background:var(--red);}
+.stat-label{font-size:.65rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;}
+.stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:1px;color:var(--text);line-height:1;}
+.stat-sub{font-size:.65rem;color:var(--muted);margin-top:3px;}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;min-width:560px;}
+thead{background:var(--surface2);}
+th{padding:10px 14px;text-align:left;font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;}
+td{padding:11px 14px;font-size:.85rem;border-top:1px solid var(--border);vertical-align:middle;white-space:nowrap;}
+tr:hover td{background:rgba(0,198,255,.03);}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:.68rem;font-weight:600;letter-spacing:.5px;}
+.badge-blue{background:rgba(0,198,255,.15);color:var(--accent);border:1px solid rgba(0,198,255,.3);}
+.badge-gold{background:rgba(255,215,0,.12);color:var(--gold);border:1px solid rgba(255,215,0,.3);}
+.badge-green{background:rgba(0,229,160,.12);color:var(--green);border:1px solid rgba(0,229,160,.3);}
+.badge-red{background:rgba(255,77,109,.12);color:var(--red);border:1px solid rgba(255,77,109,.3);}
+.badge-gray{background:rgba(90,138,170,.12);color:var(--muted);border:1px solid var(--border);}
+.badge-purple{background:rgba(180,100,255,.12);color:#b464ff;border:1px solid rgba(180,100,255,.3);}
+.time-value{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:1px;}
+.pb-tag{font-size:.62rem;color:var(--gold);margin-left:5px;}
+.btn{padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:600;transition:all .2s;letter-spacing:.5px;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+.btn-primary:hover{opacity:.85;transform:translateY(-1px);}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.btn-danger{background:transparent;border:1px solid var(--red);color:var(--red);font-size:.72rem;padding:4px 9px;}
+.btn-danger:hover{background:rgba(255,77,109,.1);}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#e6b800);color:#1a1200;font-weight:700;}
+.btn-gold:hover{opacity:.88;}
+.btn-green{background:linear-gradient(135deg,var(--green),#00b37a);color:#001a0d;font-weight:700;}
+.admin-action{display:none;}
+.admin-action.show{display:inline-flex;}
+.admin-action-block{display:none;}
+.admin-action-block.show{display:block;}
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+.form-card-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;color:var(--accent);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.form-group{display:flex;flex-direction:column;gap:5px;position:relative;}
+.form-group.full{grid-column:1/-1;}
+label{font-size:.68rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:600;}
+input,select,textarea{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Outfit',sans-serif;font-size:.88rem;transition:border-color .2s;width:100%;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,198,255,.08);}
+select option{background:var(--surface2);}
+textarea{resize:vertical;min-height:70px;}
+.form-actions{display:flex;gap:10px;flex-wrap:wrap;}
+/* Autocomplete */
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--accent);border-radius:8px;z-index:50;max-height:160px;overflow-y:auto;margin-top:2px;}
+.autocomplete-item{padding:9px 12px;cursor:pointer;font-size:.86rem;transition:background .15s;}
+.autocomplete-item:hover{background:rgba(0,198,255,.12);}
+/* List items */
+.list-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:space-between;}
+.list-item:hover{border-color:rgba(0,198,255,.4);transform:translateX(3px);}
+.list-item-left{flex:1;}
+.list-item-name{font-weight:600;font-size:.95rem;margin-bottom:3px;}
+.list-item-sub{font-size:.75rem;color:var(--muted);}
+.list-item-right{display:flex;align-items:center;gap:8px;}
+.list-item-time{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:1px;color:var(--gold);}
+/* Detail */
+.detail-back{display:flex;align-items:center;gap:8px;color:var(--accent);cursor:pointer;font-size:.85rem;margin-bottom:16px;font-weight:600;}
+.detail-back:hover{opacity:.8;}
+.detail-header{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+.detail-prueba{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;color:var(--accent);margin-bottom:4px;}
+.detail-pb-time{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:2px;color:var(--gold);line-height:1;}
+.detail-meta{font-size:.78rem;color:var(--muted);margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;}
+/* Mínimas circles */
+.min-circle{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;}
+.min-circle.none{background:rgba(90,138,170,.2);color:var(--muted);border:2px solid var(--border);}
+.min-circle.b{background:rgba(0,198,255,.2);color:var(--accent);border:2px solid var(--accent);}
+.min-circle.a{background:rgba(0,229,160,.15);color:var(--green);border:2px solid var(--green);}
+.min-circle.esp{background:rgba(255,77,109,.15);color:var(--red);border:2px solid var(--red);}
+.prog-wrap{display:flex;align-items:center;gap:8px;margin-top:6px;}
+.prog-bg{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s ease;}
+.prog-fill.done{background:linear-gradient(90deg,var(--green),#00b37a);}
+.prog-pct{font-size:.7rem;color:var(--muted);min-width:38px;text-align:right;}
+.piscina-toggle{display:flex;gap:8px;margin-bottom:16px;}
+.ptoggle-btn{flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-family:'Outfit',sans-serif;font-size:.85rem;font-weight:600;transition:all .2s;}
+.ptoggle-btn.active{background:linear-gradient(135deg,rgba(0,198,255,.15),rgba(0,114,255,.08));color:var(--accent);border-color:rgba(0,198,255,.4);}
+.min-prueba-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.min-prueba-header{padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .2s;}
+.min-prueba-header:hover{background:var(--surface2);}
+.min-prueba-name{flex:1;font-weight:600;font-size:.92rem;}
+.min-prueba-time{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1px;}
+.min-prueba-detail{display:none;padding:14px 16px;border-top:1px solid var(--border);background:var(--surface2);}
+.min-prueba-detail.open{display:block;animation:fadeUp .2s ease;}
+.min-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.min-row:last-child{border-bottom:none;}
+.min-row-label{flex:1;font-size:.82rem;color:var(--muted);}
+.conv-note{font-size:.68rem;color:var(--gold);margin-left:4px;}
+/* Records */
+.records-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.record-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all .2s;}
+.record-card:hover{border-color:rgba(255,215,0,.4);transform:translateY(-2px);}
+.record-event{font-size:.65rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+.record-piscina{font-size:.7rem;color:var(--muted);margin-bottom:4px;}
+.record-time{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;color:var(--gold);line-height:1;}
+/* Competition cards */
+.comp-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px;transition:border-color .2s;}
+.comp-card:hover{border-color:rgba(0,198,255,.3);}
+.comp-card.upcoming{border-left:3px solid var(--accent);}
+.comp-card.past{border-left:3px solid var(--muted);}
+.comp-card.active-comp{border-left:3px solid var(--green);}
+.comp-name{font-weight:700;font-size:1rem;margin-bottom:4px;}
+.comp-meta{font-size:.78rem;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+.comp-pruebas-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.comp-prueba-tag{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:.75rem;}
+.comp-prueba-tag .ev{color:var(--muted);}
+.comp-prueba-tag .tm{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--accent);letter-spacing:1px;}
+.comp-prueba-tag .tm.nohay{color:var(--muted);}
+.comp-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+/* Pools */
+.pool-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px;cursor:pointer;transition:all .2s;}
+.pool-card:hover{border-color:rgba(0,198,255,.3);transform:translateX(3px);}
+.pool-name{font-weight:700;font-size:1rem;}
+.pool-meta{font-size:.78rem;color:var(--muted);display:flex;gap:12px;margin-top:4px;flex-wrap:wrap;}
+.pool-stats{display:flex;gap:16px;margin-top:10px;}
+.pool-stat{text-align:center;}
+.pool-stat-val{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--gold);}
+.pool-stat-label{font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+/* Summary */
+.summary-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px;}
+.summary-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.summary-row:last-child{border-bottom:none;}
+.summary-prueba{flex:1;font-size:.88rem;}
+.summary-times{display:flex;align-items:center;gap:8px;}
+.summary-arrow{color:var(--muted);}
+.summary-diff{font-size:.75rem;font-weight:600;}
+.diff-better{color:var(--green);}
+.diff-worse{color:var(--red);}
+.diff-same{color:var(--muted);}
+/* Empty */
+.empty-state{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty-state .ei{font-size:2.5rem;margin-bottom:10px;opacity:.4;}
+.empty-state p{font-size:.85rem;}
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(5,14,26,.9);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;width:92%;max-width:480px;max-height:90vh;overflow-y:auto;animation:fadeUp .25s ease;}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:var(--accent);}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;}
+.modal-close:hover{color:var(--red);}
+.toast{position:fixed;bottom:20px;right:16px;background:var(--green);color:#001a0d;padding:10px 18px;border-radius:8px;font-weight:600;font-size:.82rem;z-index:600;transform:translateY(80px);opacity:0;transition:all .3s;}
+.toast.show{transform:translateY(0);opacity:1;}
+/* Admin modal */
+.admin-modal-inner{text-align:center;}
+.admin-modal-inner .mi{font-size:2.2rem;margin-bottom:10px;}
+.admin-modal-inner .ms{font-size:.82rem;color:var(--muted);margin-bottom:20px;}
+.admin-modal-inner input{text-align:center;letter-spacing:4px;margin-bottom:12px;}
+.modal-error{color:var(--red);font-size:.78rem;margin-bottom:10px;display:none;}
+.modal-error.show{display:block;}
+.modal-actions{display:flex;gap:10px;}
+.modal-actions .btn{flex:1;}
+/* Result input row */
+.result-input-row{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;}
+.result-input-row-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:.72rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.result-input-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;}
+.result-time-big{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1px;color:var(--gold);}
+@media(max-width:480px){.result-input-grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div class="loading-logo">🏊 Natación Carlos</div>
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Conectando...</div>
+</div>
+
+<!-- ADMIN MODAL -->
+<div class="modal-overlay" id="admin-modal">
+  <div class="modal"><div class="admin-modal-inner">
+    <div class="mi">🔐</div>
+    <div class="modal-title">Modo Admin</div>
+    <div class="ms">Introduce tu contraseña para editar</div>
+    <input type="password" id="admin-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkPw()"/>
+    <div class="modal-error" id="pw-error">Contraseña incorrecta</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeAdminModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="checkPw()">Entrar</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- GENERIC MODAL -->
+<div class="modal-overlay" id="generic-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="generic-modal-title">Título</div>
+      <button class="modal-close" onclick="closeGenericModal()">✕</button>
+    </div>
+    <div id="generic-modal-body"></div>
+  </div>
+</div>
+
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+<div id="sidebar">
+  <div class="sidebar-logo">
+    <span style="font-size:1.4rem">🏊</span>
+    <div><div class="sidebar-logo-text">Natación Carlos</div><div class="sidebar-logo-sub">Diario personal</div></div>
+  </div>
+  <nav>
+    <span class="nav-section-label">Principal</span>
+    <div class="nav-item active" onclick="navigate('dashboard');closeSidebar()"><span class="icon">📊</span><span>Dashboard</span></div>
+    <div class="nav-item" onclick="navigate('tiempos');closeSidebar()"><span class="icon">⏱️</span><span>Mis Tiempos</span></div>
+    <div class="nav-item" onclick="navigate('competiciones');closeSidebar()"><span class="icon">🏆</span><span>Competiciones</span></div>
+    <div class="nav-item" onclick="navigate('piscinas');closeSidebar()"><span class="icon">🏊</span><span>Piscinas</span></div>
+    <span class="nav-section-label">Análisis</span>
+    <div class="nav-item" onclick="navigate('marcas');closeSidebar()"><span class="icon">⭐</span><span>Marcas Personales</span></div>
+    <div class="nav-item" onclick="navigate('minimas');closeSidebar()"><span class="icon">🎯</span><span>Mínimas</span></div>
+    <div class="admin-only-nav" id="nav-admin-section">
+      <span class="nav-section-label">Admin</span>
+      <div class="nav-item" onclick="navigate('add-tiempo');closeSidebar()"><span class="icon">➕</span><span>Añadir Tiempo</span></div>
+      <div class="nav-item" onclick="navigate('add-comp');closeSidebar()"><span class="icon">📅</span><span>Nueva Competición</span></div>
+      <div class="nav-item" onclick="navigate('add-piscina');closeSidebar()"><span class="icon">📍</span><span>Nueva Piscina</span></div>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="admin-nav-btn" id="admin-nav-btn" onclick="openAdminModal()">
+      <span class="icon">🔐</span><span id="admin-nav-text">Acceso Admin</span>
+    </button>
+  </div>
+</div>
+
+<div id="topbar">
+  <div class="topbar-left">
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <div class="app-name">Natación Carlos</div>
+  </div>
+  <div class="topbar-right">
+    <div style="display:flex;align-items:center;gap:5px"><div class="sync-dot" id="sync-dot"></div></div>
+    <button class="btn btn-primary admin-action" onclick="navigate('add-tiempo')" style="font-size:.75rem;padding:6px 12px">+ Tiempo</button>
+  </div>
+</div>
+
+<div id="main"><div class="content">
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Total Tiempos</div><div class="stat-value" id="stat-total">—</div><div class="stat-sub">registros</div></div>
+    <div class="stat-card gold"><div class="stat-label">Marcas</div><div class="stat-value" id="stat-pbs">—</div><div class="stat-sub">pruebas</div></div>
+    <div class="stat-card green"><div class="stat-label">Competiciones</div><div class="stat-value" id="stat-comps">—</div><div class="stat-sub">registradas</div></div>
+    <div class="stat-card red"><div class="stat-label">Mínimas</div><div class="stat-value" id="stat-mins">—</div><div class="stat-sub">conseguidas</div></div>
+  </div>
+  <div class="section-title">⏱️ Últimos tiempos</div>
+  <div class="table-wrap"><div class="table-scroll">
+    <table><thead><tr><th>Fecha</th><th>Prueba</th><th>Piscina</th><th>Tiempo</th><th>Tipo</th></tr></thead>
+    <tbody id="dashboard-table"></tbody></table>
+  </div></div>
+  <div class="section-title">🏆 Próximas competiciones</div>
+  <div id="dashboard-comps"></div>
+</div>
+
+<!-- MIS TIEMPOS -->
+<div class="page" id="page-tiempos">
+  <div class="page-header"><div class="page-title-h">Mis Tiempos</div><div class="page-sub">Selecciona una prueba</div></div>
+  <div id="tiempos-pruebas-list"></div>
+</div>
+
+<!-- DETALLE TIEMPOS -->
+<div class="page" id="page-tiempos-detalle">
+  <div class="detail-back" onclick="navigate('tiempos')">← Volver a pruebas</div>
+  <div class="page-header"><div class="page-title-h" id="detalle-prueba-title"></div></div>
+  <div class="table-wrap"><div class="table-scroll">
+    <table><thead><tr><th>⭐</th><th>Fecha</th><th>Tiempo</th><th>Piscina</th><th>Lugar</th><th>Tipo</th><th>Notas</th><th></th></tr></thead>
+    <tbody id="detalle-tiempos-table"></tbody></table>
+  </div></div>
+</div>
+
+<!-- COMPETICIONES -->
+<div class="page" id="page-competiciones">
+  <div class="page-header">
+    <div class="page-title-h">Competiciones</div>
+    <div id="comp-filter-btns" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <button class="ptoggle-btn active" id="cf-all" onclick="setCompFilter('all')" style="flex:unset;padding:6px 14px">Todas</button>
+      <button class="ptoggle-btn" id="cf-upcoming" onclick="setCompFilter('upcoming')" style="flex:unset;padding:6px 14px">Próximas</button>
+      <button class="ptoggle-btn" id="cf-past" onclick="setCompFilter('past')" style="flex:unset;padding:6px 14px">Pasadas</button>
+    </div>
+  </div>
+  <div id="comp-list"></div>
+</div>
+
+<!-- DETALLE COMPETICION -->
+<div class="page" id="page-comp-detalle">
+  <div class="detail-back" onclick="navigate('competiciones')">← Volver a competiciones</div>
+  <div id="comp-detalle-content"></div>
+</div>
+
+<!-- PISCINAS -->
+<div class="page" id="page-piscinas">
+  <div class="page-header"><div class="page-title-h">Piscinas</div><div class="page-sub">Instalaciones registradas</div></div>
+  <div id="piscinas-list"></div>
+</div>
+
+<!-- DETALLE PISCINA -->
+<div class="page" id="page-piscina-detalle">
+  <div class="detail-back" onclick="navigate('piscinas')">← Volver a piscinas</div>
+  <div id="piscina-detalle-content"></div>
+</div>
+
+<!-- MARCAS -->
+<div class="page" id="page-marcas">
+  <div class="page-header"><div class="page-title-h">Marcas Personales</div><div class="page-sub">Pulsa para ver el detalle</div></div>
+  <div class="records-grid" id="records-grid"></div>
+</div>
+
+<!-- DETALLE MARCA -->
+<div class="page" id="page-marca-detalle">
+  <div class="detail-back" onclick="navigate('marcas')">← Volver a marcas</div>
+  <div id="marca-detalle-content"></div>
+</div>
+
+<!-- MÍNIMAS -->
+<div class="page" id="page-minimas">
+  <div class="page-header"><div class="page-title-h">Mínimas</div></div>
+  <div class="piscina-toggle">
+    <button class="ptoggle-btn active" id="ptoggle-25" onclick="setMinPiscina('25m')">🏊 P.25</button>
+    <button class="ptoggle-btn" id="ptoggle-50" onclick="setMinPiscina('50m')">🏊 P.50</button>
+  </div>
+  <div id="minimas-list"></div>
+</div>
+
+<!-- DETALLE MÍNIMA -->
+<div class="page" id="page-minima-detalle">
+  <div class="detail-back" onclick="navigate('minimas')">← Volver a mínimas</div>
+  <div id="minima-detalle-content"></div>
+</div>
+
+<!-- ADD TIEMPO -->
+<div class="page" id="page-add-tiempo">
+  <div class="form-card">
+    <div class="form-card-title">➕ Añadir Tiempo</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Prueba</label>
+        <select id="at-prueba">
+          <option value="">— Selecciona —</option>
+          <optgroup label="Libre"><option>50m Libre</option><option>100m Libre</option><option>200m Libre</option><option>400m Libre</option><option>800m Libre</option><option>1500m Libre</option></optgroup>
+          <optgroup label="Mariposa"><option>50m Mariposa</option><option>100m Mariposa</option><option>200m Mariposa</option></optgroup>
+          <optgroup label="Espalda"><option>50m Espalda</option><option>100m Espalda</option><option>200m Espalda</option></optgroup>
+          <optgroup label="Braza"><option>50m Braza</option><option>100m Braza</option><option>200m Braza</option></optgroup>
+          <optgroup label="Estilos"><option>200m Estilos</option><option>400m Estilos</option></optgroup>
+        </select>
+      </div>
+      <div class="form-group"><label>Piscina</label><select id="at-piscina"><option value="25m">Corta (25m)</option><option value="50m">Larga (50m)</option></select></div>
+      <div class="form-group"><label>Tiempo (mm:ss.cc)</label><input type="text" id="at-tiempo" placeholder="0:25.34"/></div>
+      <div class="form-group"><label>Fecha</label><input type="date" id="at-fecha"/></div>
+      <div class="form-group"><label>Tipo</label><select id="at-tipo"><option value="entrenamiento">Entrenamiento</option><option value="competicion">Competición</option><option value="crono">Cronometrado</option></select></div>
+      <div class="form-group"><label>Lugar</label><input type="text" id="at-lugar" placeholder="Piscina Municipal..."/></div>
+      <div class="form-group full"><label>Notas</label><textarea id="at-notas" placeholder="Sensaciones, observaciones..."></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="addTiempo()">💾 Guardar</button>
+      <button class="btn btn-ghost" onclick="navigate('tiempos')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT COMPETICION -->
+<div class="page" id="page-add-comp">
+  <div class="form-card">
+    <div class="form-card-title" id="comp-form-title">📅 Nueva Competición</div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Nombre de la competición</label><input type="text" id="ac-nombre" placeholder="Campeonato de Andalucía..."/></div>
+      <div class="form-group"><label>Fecha inicio</label><input type="date" id="ac-fecha-ini"/></div>
+      <div class="form-group"><label>Fecha fin</label><input type="date" id="ac-fecha-fin"/></div>
+      <div class="form-group" style="position:relative">
+        <label>Piscina / Lugar</label>
+        <input type="text" id="ac-lugar" placeholder="Piscina de La Rinconada..." autocomplete="off" oninput="piscinaAutocomplete(this.value)" onblur="setTimeout(()=>hideAutoComplete(),200)"/>
+        <div class="autocomplete-list" id="ac-autocomplete" style="display:none"></div>
+      </div>
+      <div class="form-group"><label>Tipo</label><select id="ac-tipo"><option>Local</option><option>Autonómica</option><option>Nacional</option><option>Internacional</option></select></div>
+      <div class="form-group full"><label>Notas</label><textarea id="ac-notas"></textarea></div>
+    </div>
+    <div class="section-title" style="margin-top:4px">Pruebas a nadar</div>
+    <div id="comp-pruebas-form" style="margin-bottom:12px"></div>
+    <button class="btn btn-ghost" onclick="addCompPruebaRow()" style="width:100%;margin-bottom:16px">+ Añadir prueba</button>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="saveComp()">💾 Guardar</button>
+      <button class="btn btn-ghost" onclick="navigate('competiciones')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PISCINA -->
+<div class="page" id="page-add-piscina">
+  <div class="form-card">
+    <div class="form-card-title">📍 Nueva Piscina</div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Nombre</label><input type="text" id="ap-nombre" placeholder="Piscina de La Rinconada..."/></div>
+      <div class="form-group"><label>Ciudad</label><input type="text" id="ap-ciudad" placeholder="Sevilla..."/></div>
+      <div class="form-group"><label>Metros</label><select id="ap-metros"><option value="25m">Corta (25m)</option><option value="50m">Larga (50m)</option></select></div>
+      <div class="form-group full"><label>Enlace Google Maps</label><input type="text" id="ap-maps" placeholder="https://maps.google.com/..."/></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="savePiscina()">💾 Guardar</button>
+      <button class="btn btn-ghost" onclick="navigate('piscinas')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+</div></div><!-- /content /main -->
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, updateDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const ADMIN_PASSWORD = "CAMBIA_ESTA_CONTRASEÑA";
+const firebaseConfig = {
+  apiKey:"AIzaSyAJ2RAlkFjM2xh7nCPXxPDWLRkAEUjJOew",
+  authDomain:"natacion-cmis.firebaseapp.com",
+  projectId:"natacion-cmis",
+  storageBucket:"natacion-cmis.firebasestorage.app",
+  messagingSenderId:"549731749014",
+  appId:"1:549731749014:web:2180c853689de487c6c6b7"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let state = { tiempos:[], competiciones:[], piscinas:[] };
+let isAdmin = false;
+let currentPage = 'dashboard';
+let compPruebasTemp = [];
+let editingCompId = null;
+let compFilter = 'all';
+let minimasPiscina = '25m';
+
+// ===== CONVERSIONES =====
+const CONV = {
+  '50m Libre':0.60,'100m Libre':1.60,'200m Libre':3.50,'400m Libre':6.70,'800m Libre':12.90,'1500m Libre':23.50,
+  '50m Mariposa':0.40,'100m Mariposa':1.10,'200m Mariposa':2.90,
+  '50m Espalda':1.50,'100m Espalda':2.90,'200m Espalda':5.50,
+  '50m Braza':0.70,'100m Braza':2.40,'200m Braza':5.40,
+  '200m Estilos':3.70,'400m Estilos':8.80
+};
+
+function t(s){ const p=s.split(':'); return p.length===2?parseFloat(p[0])*60+parseFloat(p[1]):parseFloat(p[0]); }
+
+const MINIMAS = {
+  '50m Libre':    {A:{p50:t('00:27.98'),p25:t('00:27.38')},B:{p50:t('00:29.38'),p25:t('00:28.78')},Esp:{p50:t('00:26.25'),p25:t('00:24.75')}},
+  '100m Libre':   {A:{p50:t('01:01.89'),p25:t('01:00.29')},B:{p50:t('01:04.99'),p25:t('01:03.39')},Esp:{p50:t('00:57.20'),p25:t('00:54.80')}},
+  '200m Libre':   {A:{p50:t('02:14.99'),p25:t('02:11.49')},B:{p50:t('02:21.74'),p25:t('02:18.24')},Esp:{p50:t('02:06.00'),p25:t('02:00.75')}},
+  '400m Libre':   {A:{p50:t('04:46.96'),p25:t('04:40.26')},B:{p50:t('05:01.31'),p25:t('04:54.61')},Esp:{p50:t('04:30.95'),p25:t('04:19.05')}},
+  '800m Libre':   {A:{p50:t('09:55.69'),p25:t('09:42.79')},B:{p50:t('10:25.48'),p25:t('10:12.58')},Esp:{p50:t('09:18.00'),p25:t('08:58.90')}},
+  '1500m Libre':  {A:{p50:t('19:07.62'),p25:t('18:44.12')},B:{p50:t('20:05.01'),p25:t('19:41.51')},Esp:{p50:t('17:41.00'),p25:t('17:03.20')}},
+  '50m Mariposa': {A:{p50:t('00:30.51'),p25:t('00:30.11')},B:{p50:t('00:32.04'),p25:t('00:31.64')},Esp:{p50:t('00:28.35'),p25:t('00:26.90')}},
+  '100m Mariposa':{A:{p50:t('01:07.63'),p25:t('01:06.53')},B:{p50:t('01:11.01'),p25:t('01:09.91')},Esp:{p50:t('01:03.00'),p25:t('01:00.20')}},
+  '200m Mariposa':{A:{p50:t('02:35.37'),p25:t('02:32.47')},B:{p50:t('02:43.14'),p25:t('02:40.24')},Esp:{p50:t('02:22.50'),p25:t('02:16.55')}},
+  '50m Espalda':  {A:{p50:t('00:32.91'),p25:t('00:31.41')},B:{p50:t('00:34.56'),p25:t('00:33.06')},Esp:{p50:t('00:33.45'),p25:t('00:31.85')}},
+  '100m Espalda': {A:{p50:t('01:10.74'),p25:t('01:07.84')},B:{p50:t('01:14.28'),p25:t('01:11.38')},Esp:{p50:t('01:13.00'),p25:t('01:10.20')}},
+  '200m Espalda': {A:{p50:t('02:35.21'),p25:t('02:29.71')},B:{p50:t('02:42.97'),p25:t('02:37.47')},Esp:{p50:t('02:39.10'),p25:t('02:30.90')}},
+  '50m Braza':    {A:{p50:t('00:36.50'),p25:t('00:35.80')},B:{p50:t('00:38.33'),p25:t('00:37.63')},Esp:{p50:t('00:30.75'),p25:t('00:28.55')}},
+  '100m Braza':   {A:{p50:t('01:19.01'),p25:t('01:16.61')},B:{p50:t('01:22.96'),p25:t('01:20.56')},Esp:{p50:t('01:05.00'),p25:t('01:00.30')}},
+  '200m Braza':   {A:{p50:t('02:53.52'),p25:t('02:48.12')},B:{p50:t('03:02.19'),p25:t('02:56.79')},Esp:{p50:t('02:20.10'),p25:t('02:11.05')}},
+  '200m Estilos': {A:{p50:t('02:34.85'),p25:t('02:31.15')},B:{p50:t('02:42.59'),p25:t('02:38.89')},Esp:{p50:t('02:22.60'),p25:t('02:14.95')}},
+  '400m Estilos': {A:{p50:t('05:29.21'),p25:t('05:20.41')},B:{p50:t('05:45.67'),p25:t('05:36.87')},Esp:{p50:t('05:05.10'),p25:t('04:52.55')}},
+};
+
+const PRUEBAS_ORDER = ['50m Libre','100m Libre','200m Libre','400m Libre','800m Libre','1500m Libre','50m Mariposa','100m Mariposa','200m Mariposa','50m Espalda','100m Espalda','200m Espalda','50m Braza','100m Braza','200m Braza','200m Estilos','400m Estilos'];
+
+// ===== UTILS =====
+function parseTime(s){
+  s=String(s).trim();
+  const p=s.split(':');
+  const v=p.length===2?parseFloat(p[0])*60+parseFloat(p[1]):parseFloat(p[0]);
+  return isNaN(v)?null:v;
+}
+function formatTime(secs){
+  if(secs===null||secs===undefined)return'—';
+  const m=Math.floor(secs/60);
+  const s=(secs%60).toFixed(2).padStart(5,'0');
+  return m>0?`${m}:${s}`:`${Number(secs).toFixed(2)}`;
+}
+function convertTime(tiempo,prueba,from,to){
+  const f=CONV[prueba]; if(!f||from===to)return tiempo;
+  return from==='50m'?tiempo-f:tiempo+f;
+}
+function getMinKey(p){return p==='25m'?'p25':'p50';}
+function tipoBadge(t){return t==='competicion'?'badge-gold':t==='crono'?'badge-blue':'badge-gray';}
+function isInPast(fecha){ return fecha && new Date(fecha)<new Date(new Date().toDateString()); }
+
+// ===== FIREBASE LISTENERS =====
+function setSyncing(s,err){
+  const d=document.getElementById('sync-dot');
+  d.className='sync-dot'+(s?' syncing':err?' error':'');
+}
+function hideLoading(){document.getElementById('loading-screen').style.display='none';}
+
+let loadedCount=0;
+function checkLoaded(){loadedCount++;if(loadedCount>=3)hideLoading();}
+
+onSnapshot(query(collection(db,'tiempos'),orderBy('fecha','desc')),snap=>{
+  state.tiempos=snap.docs.map(d=>({...d.data(),_id:d.id}));
+  setSyncing(false); refreshPage(); checkLoaded();
+},()=>{setSyncing(false,true);checkLoaded();});
+
+onSnapshot(query(collection(db,'competiciones'),orderBy('fechaIni','desc')),snap=>{
+  state.competiciones=snap.docs.map(d=>({...d.data(),_id:d.id}));
+  refreshPage(); checkLoaded();
+},()=>checkLoaded());
+
+onSnapshot(collection(db,'piscinas'),snap=>{
+  state.piscinas=snap.docs.map(d=>({...d.data(),_id:d.id}));
+  refreshPage(); checkLoaded();
+},()=>checkLoaded());
+
+setTimeout(()=>{
+  if(document.getElementById('loading-screen').style.display!=='none'){hideLoading();setSyncing(false,true);}
+},7000);
+
+// ===== SIDEBAR =====
+window.toggleSidebar=()=>{
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('show');
+};
+window.closeSidebar=()=>{
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+};
+
+// ===== ADMIN =====
+window.openAdminModal=()=>{
+  if(isAdmin){exitAdmin();return;}
+  document.getElementById('admin-modal').classList.add('show');
+  document.getElementById('admin-pw').value='';
+  document.getElementById('pw-error').classList.remove('show');
+  setTimeout(()=>document.getElementById('admin-pw').focus(),100);
+};
+window.closeAdminModal=()=>document.getElementById('admin-modal').classList.remove('show');
+window.checkPw=()=>{
+  if(document.getElementById('admin-pw').value===ADMIN_PASSWORD){
+    isAdmin=true;closeAdminModal();activateAdmin();
+  }else{
+    document.getElementById('pw-error').classList.add('show');
+    document.getElementById('admin-pw').value='';
+  }
+};
+function activateAdmin(){
+  document.getElementById('nav-admin-section').classList.add('show');
+  document.querySelectorAll('.admin-action').forEach(e=>e.classList.add('show'));
+  document.getElementById('admin-nav-btn').classList.add('active');
+  document.getElementById('admin-nav-text').textContent='Admin activo · Salir';
+  showToast('🔐 Modo admin activado');
+  refreshPage();
+}
+function exitAdmin(){
+  isAdmin=false;
+  document.getElementById('nav-admin-section').classList.remove('show');
+  document.querySelectorAll('.admin-action').forEach(e=>e.classList.remove('show'));
+  document.getElementById('admin-nav-btn').classList.remove('active');
+  document.getElementById('admin-nav-text').textContent='Acceso Admin';
+  navigate('dashboard');
+}
+
+// ===== NAVIGATION =====
+window.navigate=(page)=>{
+  if(['add-tiempo','add-comp','add-piscina'].includes(page)&&!isAdmin)return;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const el=document.getElementById('page-'+page);
+  if(!el)return;
+  el.classList.add('active');
+  const nav=document.querySelector(`.nav-item[onclick*="'${page}'"]`);
+  if(nav)nav.classList.add('active');
+  currentPage=page;
+  if(page==='add-comp'&&!editingCompId)resetCompForm();
+  renderPage(page);
+};
+function refreshPage(){renderPage(currentPage);}
+function renderPage(p){
+  if(p==='dashboard')renderDashboard();
+  if(p==='tiempos')renderTiemposPruebas();
+  if(p==='competiciones')renderCompeticiones();
+  if(p==='piscinas')renderPiscinas();
+  if(p==='marcas')renderMarcas();
+  if(p==='minimas')renderMinimas();
+}
+
+// ===== PBs =====
+function getPBs(){
+  const pbs={};
+  state.tiempos.forEach(t=>{
+    const key=t.prueba+'|'+t.piscina;
+    if(!pbs[key]||t.tiempo<pbs[key].tiempo)pbs[key]={...t};
+  });
+  return pbs;
+}
+function getBestOverall(prueba){
+  let best=null;
+  state.tiempos.filter(t=>t.prueba===prueba).forEach(t=>{
+    const t50=t.piscina==='25m'?convertTime(t.tiempo,prueba,'25m','50m'):t.tiempo;
+    if(!best||t50<best.t50)best={...t,t50};
+  });
+  return best;
+}
+
+// ===== DASHBOARD =====
+function renderDashboard(){
+  document.getElementById('stat-total').textContent=state.tiempos.length;
+  document.getElementById('stat-comps').textContent=state.competiciones.length;
+  const pbs=getPBs();
+  document.getElementById('stat-pbs').textContent=Object.keys(pbs).length;
+  let cons=0;
+  PRUEBAS_ORDER.forEach(pr=>{
+    const best=getBestOverall(pr); if(!best)return;
+    ['A','B','Esp'].forEach(tipo=>{
+      const min=MINIMAS[pr]; if(!min||!min[tipo])return;
+      const pKey=getMinKey(best.piscina);
+      if(min[tipo][pKey]&&best.tiempo<=min[tipo][pKey])cons++;
+    });
+  });
+  document.getElementById('stat-mins').textContent=cons;
+
+  const tbody=document.getElementById('dashboard-table');
+  const recent=state.tiempos.slice(0,8);
+  tbody.innerHTML=recent.length===0
+    ?'<tr><td colspan="5"><div class="empty-state"><div class="ei">🌊</div><p>Sin tiempos aún.</p></div></td></tr>'
+    :recent.map(t=>`<tr><td>${t.fecha}</td><td>${t.prueba}</td><td><span class="badge badge-gray">${t.piscina}</span></td><td><span class="time-value">${formatTime(t.tiempo)}</span></td><td><span class="badge ${tipoBadge(t.tipo)}">${t.tipo}</span></td></tr>`).join('');
+
+  const today=new Date();
+  const upcoming=state.competiciones.filter(c=>!isInPast(c.fechaFin||c.fechaIni)).sort((a,b)=>new Date(a.fechaIni)-new Date(b.fechaIni)).slice(0,3);
+  const dc=document.getElementById('dashboard-comps');
+  dc.innerHTML=upcoming.length===0
+    ?'<div class="empty-state" style="padding:24px"><div class="ei">📅</div><p>No hay competiciones próximas.</p></div>'
+    :upcoming.map(c=>compCardSmall(c)).join('');
+}
+
+// ===== TIEMPOS =====
+function renderTiemposPruebas(){
+  const el=document.getElementById('tiempos-pruebas-list');
+  const pbs=getPBs();
+  const pruebas=[...new Set(state.tiempos.map(t=>t.prueba))].sort((a,b)=>PRUEBAS_ORDER.indexOf(a)-PRUEBAS_ORDER.indexOf(b));
+  if(!pruebas.length){el.innerHTML='<div class="empty-state"><div class="ei">🌊</div><p>Sin tiempos registrados.</p></div>';return;}
+  el.innerHTML=pruebas.map(pr=>{
+    const cnt=state.tiempos.filter(t=>t.prueba===pr).length;
+    const mbKey=Object.keys(pbs).find(k=>k.startsWith(pr+'|'));
+    const mb=mbKey?pbs[mbKey]:null;
+    return `<div class="list-item" onclick="openDetalleTiempos('${pr}')">
+      <div class="list-item-left"><div class="list-item-name">${pr}</div><div class="list-item-sub">${cnt} registro${cnt!==1?'s':''} · ${mb?mb.piscina:'—'}</div></div>
+      <div class="list-item-right"><span class="list-item-time">${mb?formatTime(mb.tiempo):'—'}</span><span style="color:var(--muted)">›</span></div>
+    </div>`;
+  }).join('');
+}
+
+window.openDetalleTiempos=(prueba)=>{
+  document.getElementById('detalle-prueba-title').textContent=prueba;
+  const pbs=getPBs();
+  const todos=state.tiempos.filter(t=>t.prueba===prueba);
+  const pbIds=Object.keys(pbs).filter(k=>k.startsWith(prueba+'|')).map(k=>pbs[k]._id);
+  const pb=todos.filter(t=>pbIds.includes(t._id));
+  const rest=todos.filter(t=>!pbIds.includes(t._id)).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  const sorted=[...pb,...rest];
+  const tbody=document.getElementById('detalle-tiempos-table');
+  tbody.innerHTML=sorted.length===0
+    ?'<tr><td colspan="8"><div class="empty-state"><div class="ei">🌊</div><p>Sin registros.</p></div></td></tr>'
+    :sorted.map(t=>{
+      const isPB=pbIds.includes(t._id);
+      return `<tr style="${isPB?'background:rgba(255,215,0,.04)':''}">
+        <td>${isPB?'⭐':''}</td><td>${t.fecha}</td>
+        <td><span class="time-value" style="${isPB?'color:var(--gold)':''}">${formatTime(t.tiempo)}</span></td>
+        <td><span class="badge badge-gray">${t.piscina}</span></td>
+        <td style="color:var(--muted);font-size:.8rem">${t.lugar||'—'}</td>
+        <td><span class="badge ${tipoBadge(t.tipo)}">${t.tipo}</span></td>
+        <td style="color:var(--muted);font-size:.78rem;max-width:140px;overflow:hidden;text-overflow:ellipsis">${t.notas||'—'}</td>
+        ${isAdmin?`<td><button class="btn btn-danger" onclick="deleteTiempo('${t._id}')">🗑</button></td>`:'<td></td>'}
+      </tr>`;
+    }).join('');
+  navigate('tiempos-detalle');
+};
+
+window.deleteTiempo=async(id)=>{
+  if(!confirm('¿Eliminar este tiempo?'))return;
+  setSyncing(true);
+  await deleteDoc(doc(db,'tiempos',id));
+  setSyncing(false);showToast('🗑️ Eliminado');
+  const title=document.getElementById('detalle-prueba-title').textContent;
+  openDetalleTiempos(title);
+};
+
+window.addTiempo=async()=>{
+  const prueba=document.getElementById('at-prueba').value;
+  const piscina=document.getElementById('at-piscina').value;
+  const tiempoStr=document.getElementById('at-tiempo').value;
+  const fecha=document.getElementById('at-fecha').value;
+  const tipo=document.getElementById('at-tipo').value;
+  const lugar=document.getElementById('at-lugar').value;
+  const notas=document.getElementById('at-notas').value;
+  if(!prueba){alert('Selecciona una prueba');return;}
+  const tiempo=parseTime(tiempoStr);
+  if(!tiempo){alert('Tiempo no válido');return;}
+  if(!fecha){alert('Introduce una fecha');return;}
+  setSyncing(true);
+  await addDoc(collection(db,'tiempos'),{prueba,piscina,tiempo,fecha,tipo,lugar,notas,createdAt:Date.now()});
+  setSyncing(false);showToast('✅ Tiempo guardado');
+  ['at-tiempo','at-notas','at-lugar'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('at-prueba').value='';
+  navigate('tiempos');
+};
+
+// ===== COMPETICIONES =====
+window.setCompFilter=(f)=>{
+  compFilter=f;
+  ['all','upcoming','past'].forEach(x=>{
+    document.getElementById('cf-'+x).classList.toggle('active',x===f);
+  });
+  renderCompeticiones();
+};
+
+function renderCompeticiones(){
+  const list=document.getElementById('comp-list');
+  let comps=[...state.competiciones];
+  if(compFilter==='upcoming')comps=comps.filter(c=>!isInPast(c.fechaFin||c.fechaIni));
+  if(compFilter==='past')comps=comps.filter(c=>isInPast(c.fechaFin||c.fechaIni));
+  comps.sort((a,b)=>{
+    if(compFilter==='past')return new Date(b.fechaIni)-new Date(a.fechaIni);
+    return new Date(a.fechaIni)-new Date(b.fechaIni);
+  });
+  if(!comps.length){list.innerHTML='<div class="empty-state"><div class="ei">🏆</div><p>No hay competiciones.</p></div>';return;}
+  list.innerHTML=comps.map(c=>compCardFull(c)).join('');
+}
+
+function compCardSmall(c){
+  const past=isInPast(c.fechaFin||c.fechaIni);
+  const cls=past?'past':'upcoming';
+  return `<div class="comp-card ${cls}" onclick="openCompDetalle('${c._id}')" style="cursor:pointer">
+    <div class="comp-name">${c.nombre}</div>
+    <div class="comp-meta">
+      ${c.fechaIni?`<span>📅 ${c.fechaIni}${c.fechaFin&&c.fechaFin!==c.fechaIni?' → '+c.fechaFin:''}</span>`:''}
+      ${c.lugar?`<span>📍 ${c.lugar}</span>`:''}
+    </div>
+  </div>`;
+}
+
+function compCardFull(c){
+  const past=isInPast(c.fechaFin||c.fechaIni);
+  const cls=past?'past':'upcoming';
+  const statusBadge=past?'<span class="badge badge-gray">Finalizada</span>':'<span class="badge badge-blue">Próxima</span>';
+  const pruebas=c.pruebas||[];
+  const pruebasHTML=pruebas.map(p=>`
+    <div class="comp-prueba-tag">
+      <span class="ev">${p.prueba} · ${p.piscina}</span>
+      ${p.tiempo?`<span class="tm">${formatTime(p.tiempo)}</span>`:'<span class="tm nohay">Sin resultado</span>'}
+      ${p.serie?`<span style="color:var(--muted);font-size:.65rem">S${p.serie}·C${p.calle||'—'}</span>`:''}
+    </div>`).join('');
+
+  const adminBtns=isAdmin?`
+    <button class="btn btn-ghost" style="font-size:.75rem;padding:6px 12px" onclick="editComp('${c._id}')">✏️ Editar</button>
+    ${past&&!c.finalizada?`<button class="btn btn-gold" style="font-size:.75rem;padding:6px 12px" onclick="openFinalizarComp('${c._id}')">🏁 Finalizar</button>`:''}
+    <button class="btn btn-danger" onclick="deleteComp('${c._id}')">🗑</button>`:'';
+
+  return `<div class="comp-card ${cls}">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+      <div class="comp-name" style="cursor:pointer" onclick="openCompDetalle('${c._id}')">${c.nombre}</div>
+      ${statusBadge}
+      <span class="badge badge-gray">${c.tipo||''}</span>
+      ${c.finalizada?'<span class="badge badge-green">✓ Finalizada</span>':''}
+    </div>
+    <div class="comp-meta">
+      ${c.fechaIni?`<span>📅 ${c.fechaIni}${c.fechaFin&&c.fechaFin!==c.fechaIni?' → '+c.fechaFin:''}</span>`:''}
+      ${c.lugar?`<span>📍 ${c.lugar}</span>`:''}
+    </div>
+    ${pruebasHTML?`<div class="comp-pruebas-tags">${pruebasHTML}</div>`:''}
+    ${c.notas?`<div style="margin-top:8px;font-size:.78rem;color:var(--muted)">${c.notas}</div>`:''}
+    <div class="comp-actions">${adminBtns}</div>
+  </div>`;
+}
+
+window.openCompDetalle=(id)=>{
+  const c=state.competiciones.find(x=>x._id===id);
+  if(!c)return;
+  const past=isInPast(c.fechaFin||c.fechaIni);
+  const pruebas=c.pruebas||[];
+  const piscinaData=state.piscinas.find(p=>p.nombre===c.lugar);
+  const piscinaMetros=piscinaData?piscinaData.metros:'—';
+
+  const pruebasHTML=pruebas.map((p,i)=>{
+    const conv=p.tiempo&&p.piscina&&piscinaData?convertTime(p.tiempo,p.prueba,p.piscina,p.piscina==='25m'?'50m':'25m'):null;
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-weight:600;font-size:.9rem">${p.prueba}</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:2px">
+            ${p.piscina?`🏊 ${p.piscina}`:''}
+            ${p.serie?` · Serie ${p.serie}`:''}
+            ${p.calle?` · Calle ${p.calle}`:''}
+          </div>
+        </div>
+        <div style="text-align:right">
+          ${p.tiempo?`<div class="result-time-big">${formatTime(p.tiempo)}</div>`:'<div style="color:var(--muted);font-size:.82rem">Sin resultado</div>'}
+          ${conv&&p.tiempo?`<div style="font-size:.7rem;color:var(--muted)">Equiv. ${p.piscina==='25m'?'50m':'25m'}: ${formatTime(conv)}</div>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const summaryHTML=c.finalizada&&c.resumen?buildSummaryHTML(c.resumen):'';
+
+  document.getElementById('comp-detalle-content').innerHTML=`
+    <div class="detail-header">
+      <div class="detail-prueba">${c.nombre}</div>
+      <div class="detail-meta">
+        ${c.fechaIni?`<span>📅 ${c.fechaIni}${c.fechaFin&&c.fechaFin!==c.fechaIni?' → '+c.fechaFin:''}</span>`:''}
+        ${c.lugar?`<span>📍 ${c.lugar} (${piscinaMetros})</span>`:''}
+        ${c.tipo?`<span>📋 ${c.tipo}</span>`:''}
+        ${piscinaData?.maps?`<span><a href="${piscinaData.maps}" target="_blank" style="color:var(--accent)">🗺️ Ver en Maps</a></span>`:''}
+      </div>
+      ${c.notas?`<div style="margin-top:10px;font-size:.82rem;color:var(--muted)">${c.notas}</div>`:''}
+    </div>
+    <div class="section-title">Pruebas</div>
+    ${pruebasHTML||'<div class="empty-state" style="padding:24px"><div class="ei">📋</div><p>Sin pruebas registradas.</p></div>'}
+    ${summaryHTML}
+    ${isAdmin&&past&&!c.finalizada?`<div style="margin-top:16px"><button class="btn btn-gold" onclick="openFinalizarComp('${c._id}')" style="width:100%">🏁 Finalizar competición y añadir resultados</button></div>`:''}
+  `;
+  navigate('comp-detalle');
+};
+
+function buildSummaryHTML(resumen){
+  if(!resumen||!resumen.length)return'';
+  return `<div style="margin-top:16px">
+    <div class="section-title">📊 Resumen final</div>
+    <div class="summary-card">
+      ${resumen.map(r=>{
+        const diffSecs=r.tiempoNuevo&&r.tiempoAntes?r.tiempoNuevo-r.tiempoAntes:null;
+        const mejora=diffSecs!==null&&diffSecs<0;
+        const igual=diffSecs===0;
+        let diffHTML='';
+        if(diffSecs!==null){
+          const cls=mejora?'diff-better':igual?'diff-same':'diff-worse';
+          const sign=mejora?'▼ ':diffSecs>0?'▲ ':'';
+          diffHTML=`<span class="summary-diff ${cls}">${sign}${formatTime(Math.abs(diffSecs))}</span>`;
+        }
+        const newMins=r.nuevasMinimas||[];
+        const newPB=r.nuevaMB;
+        return `<div class="summary-row">
+          <div class="summary-prueba">
+            <div style="font-weight:600;font-size:.88rem">${r.prueba}</div>
+            ${newPB?'<span class="badge badge-gold" style="font-size:.62rem">⭐ Nueva MB</span>':''}
+            ${newMins.map(m=>`<span class="badge badge-${m==='B'?'blue':m==='A'?'green':'red'}" style="font-size:.62rem">✓ Mínima ${m}</span>`).join('')}
+          </div>
+          <div class="summary-times">
+            ${r.tiempoAntes?`<span style="color:var(--muted);font-size:.82rem">${formatTime(r.tiempoAntes)}</span><span class="summary-arrow">→</span>`:''}
+            <span class="time-value" style="color:var(--gold)">${formatTime(r.tiempoNuevo)}</span>
+            ${diffHTML}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+// ===== FINALIZAR COMPETICION =====
+window.openFinalizarComp=(id)=>{
+  const c=state.competiciones.find(x=>x._id===id);
+  if(!c)return;
+  const pruebas=c.pruebas||[];
+  const body=`
+    <p style="color:var(--muted);font-size:.82rem;margin-bottom:16px">Introduce los tiempos obtenidos. Se añadirán automáticamente a tus tiempos y se generará un resumen.</p>
+    ${pruebas.map((p,i)=>`
+      <div class="result-input-row">
+        <div class="result-input-row-header">
+          <span>${p.prueba} · ${p.piscina}${p.serie?' · Serie '+p.serie:''}${p.calle?' · Calle '+p.calle:''}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label style="font-size:.65rem;color:var(--muted)">TIEMPO (mm:ss.cc)</label>
+            <input type="text" id="res-tiempo-${i}" placeholder="1:23.45" value="${p.tiempo?formatTime(p.tiempo):''}" style="margin-top:3px"/></div>
+          <div><label style="font-size:.65rem;color:var(--muted)">PUESTO</label>
+            <input type="text" id="res-puesto-${i}" placeholder="1º" value="${p.puesto||''}" style="margin-top:3px"/></div>
+        </div>
+      </div>`).join('')}
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn btn-ghost" onclick="closeGenericModal()">Cancelar</button>
+      <button class="btn btn-green" onclick="finalizarComp('${id}',${pruebas.length})">🏁 Finalizar y guardar</button>
+    </div>`;
+  openGenericModal('Añadir resultados',body);
+};
+
+window.finalizarComp=async(id,count)=>{
+  const c=state.competiciones.find(x=>x._id===id);
+  if(!c)return;
+  const pruebas=[...(c.pruebas||[])];
+  const resumen=[];
+  const pbs=getPBs();
+
+  for(let i=0;i<count;i++){
+    const tiempoStr=document.getElementById(`res-tiempo-${i}`)?.value;
+    const puesto=document.getElementById(`res-puesto-${i}`)?.value||'';
+    const tiempo=parseTime(tiempoStr);
+    if(!tiempo)continue;
+    const p=pruebas[i];
+    pruebas[i]={...p,tiempo,puesto};
+
+    // Save to tiempos
+    setSyncing(true);
+    await addDoc(collection(db,'tiempos'),{prueba:p.prueba,piscina:p.piscina,tiempo,fecha:c.fechaIni,tipo:'competicion',lugar:c.nombre,notas:puesto?`Puesto: ${puesto}`:'',createdAt:Date.now()});
+
+    // Compare with previous MB
+    const pbKey=p.prueba+'|'+p.piscina;
+    const mbAnterior=pbs[pbKey];
+    let tiempoAntes=null;
+    if(mbAnterior){
+      tiempoAntes=mbAnterior.piscina===p.piscina?mbAnterior.tiempo:convertTime(mbAnterior.tiempo,p.prueba,mbAnterior.piscina,p.piscina);
+    }
+    const nuevaMB=!mbAnterior||tiempo<tiempoAntes;
+
+    // Check new mínimas
+    const min=MINIMAS[p.prueba];
+    const pKey2=getMinKey(p.piscina);
+    const nuevasMinimas=[];
+    if(min){
+      ['B','A','Esp'].forEach(tipo=>{
+        if(!min[tipo])return;
+        const minT=min[tipo][pKey2];
+        const teniaBefore=mbAnterior&&tiempoAntes<=minT;
+        if(!teniaBefore&&tiempo<=minT)nuevasMinimas.push(tipo);
+      });
+    }
+    resumen.push({prueba:p.prueba,piscina:p.piscina,tiempoAntes,tiempoNuevo:tiempo,nuevaMB,nuevasMinimas});
+  }
+
+  setSyncing(true);
+  await updateDoc(doc(db,'competiciones',id),{pruebas,finalizada:true,resumen});
+  setSyncing(false);
+  closeGenericModal();
+  showToast('🏁 Competición finalizada');
+  openCompDetalle(id);
+};
+
+// ===== FORM COMPETICION =====
+function resetCompForm(){
+  editingCompId=null;
+  compPruebasTemp=[];
+  document.getElementById('comp-form-title').textContent='📅 Nueva Competición';
+  ['ac-nombre','ac-lugar','ac-notas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ac-fecha-ini').value='';
+  document.getElementById('ac-fecha-fin').value='';
+  document.getElementById('ac-tipo').value='Local';
+  renderCompPruebasForm();
+}
+
+window.editComp=(id)=>{
+  const c=state.competiciones.find(x=>x._id===id);
+  if(!c)return;
+  editingCompId=id;
+  compPruebasTemp=[...(c.pruebas||[])];
+  document.getElementById('comp-form-title').textContent='✏️ Editar Competición';
+  document.getElementById('ac-nombre').value=c.nombre||'';
+  document.getElementById('ac-lugar').value=c.lugar||'';
+  document.getElementById('ac-notas').value=c.notas||'';
+  document.getElementById('ac-fecha-ini').value=c.fechaIni||'';
+  document.getElementById('ac-fecha-fin').value=c.fechaFin||'';
+  document.getElementById('ac-tipo').value=c.tipo||'Local';
+  renderCompPruebasForm();
+  navigate('add-comp');
+};
+
+window.addCompPruebaRow=()=>{
+  compPruebasTemp.push({prueba:'50m Libre',piscina:'25m',serie:'',calle:'',tiempo:null,puesto:''});
+  renderCompPruebasForm();
+};
+window.removeCompPrueba=(i)=>{compPruebasTemp.splice(i,1);renderCompPruebasForm();};
+window.updateCP=(i,f,v)=>{
+  if(f==='tiempo'){compPruebasTemp[i][f]=parseTime(v)||null;}
+  else compPruebasTemp[i][f]=v;
+};
+
+function renderCompPruebasForm(){
+  const el=document.getElementById('comp-pruebas-form');
+  if(!compPruebasTemp.length){el.innerHTML='<p style="color:var(--muted);font-size:.82rem;margin-bottom:8px">No hay pruebas añadidas aún.</p>';return;}
+  el.innerHTML=compPruebasTemp.map((p,i)=>`
+    <div class="result-input-row">
+      <div class="result-input-row-header">
+        <span>Prueba ${i+1}</span>
+        <button onclick="removeCompPrueba(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.78rem">✕ Quitar</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label style="font-size:.62rem;color:var(--muted)">PRUEBA</label>
+          <select onchange="updateCP(${i},'prueba',this.value)" style="margin-top:3px;font-size:.8rem">
+            ${PRUEBAS_ORDER.map(pr=>`<option ${pr===p.prueba?'selected':''}>${pr}</option>`).join('')}
+          </select></div>
+        <div><label style="font-size:.62rem;color:var(--muted)">PISCINA</label>
+          <select onchange="updateCP(${i},'piscina',this.value)" style="margin-top:3px;font-size:.8rem">
+            <option value="25m" ${p.piscina==='25m'?'selected':''}>25m</option>
+            <option value="50m" ${p.piscina==='50m'?'selected':''}>50m</option>
+          </select></div>
+        <div><label style="font-size:.62rem;color:var(--muted)">SERIE</label>
+          <input type="text" placeholder="1" value="${p.serie||''}" onchange="updateCP(${i},'serie',this.value)" style="margin-top:3px;font-size:.8rem"/></div>
+        <div><label style="font-size:.62rem;color:var(--muted)">CALLE</label>
+          <input type="text" placeholder="4" value="${p.calle||''}" onchange="updateCP(${i},'calle',this.value)" style="margin-top:3px;font-size:.8rem"/></div>
+      </div>
+    </div>`).join('');
+}
+
+window.saveComp=async()=>{
+  const nombre=document.getElementById('ac-nombre').value.trim();
+  const fechaIni=document.getElementById('ac-fecha-ini').value;
+  const fechaFin=document.getElementById('ac-fecha-fin').value;
+  const lugar=document.getElementById('ac-lugar').value.trim();
+  const tipo=document.getElementById('ac-tipo').value;
+  const notas=document.getElementById('ac-notas').value;
+  if(!nombre){alert('Introduce el nombre');return;}
+
+  // Auto-add piscina if not exists
+  if(lugar&&!state.piscinas.find(p=>p.nombre===lugar)){
+    await addDoc(collection(db,'piscinas'),{nombre:lugar,ciudad:'',metros:'25m',maps:'',createdAt:Date.now()});
+    showToast('📍 Piscina añadida automáticamente');
+  }
+
+  setSyncing(true);
+  const data={nombre,fechaIni,fechaFin,lugar,tipo,notas,pruebas:compPruebasTemp,createdAt:Date.now()};
+  if(editingCompId){
+    await updateDoc(doc(db,'competiciones',editingCompId),{nombre,fechaIni,fechaFin,lugar,tipo,notas,pruebas:compPruebasTemp});
+    showToast('✅ Competición actualizada');
+  }else{
+    await addDoc(collection(db,'competiciones'),data);
+    showToast('🏆 Competición guardada');
+  }
+  setSyncing(false);
+  editingCompId=null;
+  navigate('competiciones');
+};
+
+window.deleteComp=async(id)=>{
+  if(!confirm('¿Eliminar esta competición?'))return;
+  setSyncing(true);
+  await deleteDoc(doc(db,'competiciones',id));
+  setSyncing(false);showToast('🗑️ Eliminada');
+};
+
+// ===== PISCINAS =====
+window.piscinaAutocomplete=(val)=>{
+  const el=document.getElementById('ac-autocomplete');
+  if(!val||val.length<2){el.style.display='none';return;}
+  const matches=state.piscinas.filter(p=>p.nombre.toLowerCase().includes(val.toLowerCase()));
+  if(!matches.length){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML=matches.map(p=>`<div class="autocomplete-item" onmousedown="selectPiscina('${p.nombre.replace(/'/g,"\\'")}')">📍 ${p.nombre} <span style="color:var(--muted);font-size:.75rem">${p.ciudad||''} · ${p.metros||''}</span></div>`).join('');
+};
+window.selectPiscina=(nombre)=>{
+  document.getElementById('ac-lugar').value=nombre;
+  document.getElementById('ac-autocomplete').style.display='none';
+};
+window.hideAutoComplete=()=>document.getElementById('ac-autocomplete').style.display='none';
+
+function renderPiscinas(){
+  const el=document.getElementById('piscinas-list');
+  if(!state.piscinas.length){
+    el.innerHTML=`<div class="empty-state"><div class="ei">🏊</div><p>No hay piscinas registradas.<br>Se añaden automáticamente al crear competiciones.</p></div>
+    ${isAdmin?'<button class="btn btn-primary" onclick="navigate(\'add-piscina\')" style="margin:0 auto;display:block">+ Añadir piscina</button>':''}`;
+    return;
+  }
+  el.innerHTML=state.piscinas.map(p=>`
+    <div class="pool-card" onclick="openPiscinaDetalle('${p._id}')">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div>
+          <div class="pool-name">${p.nombre}</div>
+          <div class="pool-meta">
+            ${p.ciudad?`<span>📍 ${p.ciudad}</span>`:''}
+            ${p.metros?`<span>🏊 ${p.metros}</span>`:''}
+            ${p.maps?`<a href="${p.maps}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);font-size:.78rem">🗺️ Maps</a>`:''}
+          </div>
+        </div>
+        <span style="color:var(--muted)">›</span>
+      </div>
+    </div>`).join('');
+}
+
+window.openPiscinaDetalle=(id)=>{
+  const p=state.piscinas.find(x=>x._id===id);
+  if(!p)return;
+  const compsAqui=state.competiciones.filter(c=>c.lugar===p.nombre);
+  const pasadas=compsAqui.filter(c=>isInPast(c.fechaFin||c.fechaIni)).sort((a,b)=>new Date(b.fechaIni)-new Date(a.fechaIni));
+  const proximas=compsAqui.filter(c=>!isInPast(c.fechaFin||c.fechaIni)).sort((a,b)=>new Date(a.fechaIni)-new Date(b.fechaIni));
+
+  const compItem=(c)=>`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;cursor:pointer" onclick="openCompDetalle('${c._id}')">
+    <div style="font-weight:600;font-size:.88rem">${c.nombre}</div>
+    <div style="font-size:.75rem;color:var(--muted)">${c.fechaIni||''}${c.fechaFin&&c.fechaFin!==c.fechaIni?' → '+c.fechaFin:''}</div>
+  </div>`;
+
+  document.getElementById('piscina-detalle-content').innerHTML=`
+    <div class="detail-header">
+      <div class="detail-prueba">${p.nombre}</div>
+      <div class="detail-meta">
+        ${p.ciudad?`<span>📍 ${p.ciudad}</span>`:''}
+        ${p.metros?`<span>🏊 ${p.metros}</span>`:''}
+        ${p.maps?`<span><a href="${p.maps}" target="_blank" style="color:var(--accent)">🗺️ Ver en Maps</a></span>`:''}
+      </div>
+    </div>
+    <div class="pool-stats">
+      <div class="pool-stat"><div class="pool-stat-val">${pasadas.length}</div><div class="pool-stat-label">Competiciones nadadas</div></div>
+      <div class="pool-stat"><div class="pool-stat-val">${proximas.length}</div><div class="pool-stat-label">Próximas</div></div>
+      <div class="pool-stat"><div class="pool-stat-val">${compsAqui.length}</div><div class="pool-stat-label">Total</div></div>
+    </div>
+    ${proximas.length?`<div class="section-title" style="margin-top:20px">Próximas competiciones</div>${proximas.map(compItem).join('')}`:''}
+    ${pasadas.length?`<div class="section-title" style="margin-top:16px">Competiciones nadadas aquí</div>${pasadas.map(compItem).join('')}`:''}
+    ${!compsAqui.length?'<div class="empty-state" style="padding:30px"><div class="ei">📅</div><p>Sin competiciones en esta piscina aún.</p></div>':''}
+    ${isAdmin?`<div style="margin-top:16px"><button class="btn btn-danger" onclick="deletePiscina('${p._id}')">🗑 Eliminar piscina</button></div>`:''}
+  `;
+  navigate('piscina-detalle');
+};
+
+window.savePiscina=async()=>{
+  const nombre=document.getElementById('ap-nombre').value.trim();
+  const ciudad=document.getElementById('ap-ciudad').value.trim();
+  const metros=document.getElementById('ap-metros').value;
+  const maps=document.getElementById('ap-maps').value.trim();
+  if(!nombre){alert('Introduce el nombre');return;}
+  setSyncing(true);
+  await addDoc(collection(db,'piscinas'),{nombre,ciudad,metros,maps,createdAt:Date.now()});
+  setSyncing(false);showToast('📍 Piscina guardada');
+  ['ap-nombre','ap-ciudad','ap-maps'].forEach(id=>document.getElementById(id).value='');
+  navigate('piscinas');
+};
+
+window.deletePiscina=async(id)=>{
+  if(!confirm('¿Eliminar esta piscina?'))return;
+  await deleteDoc(doc(db,'piscinas',id));
+  showToast('🗑️ Eliminada');navigate('piscinas');
+};
+
+// ===== MARCAS =====
+function renderMarcas(){
+  const grid=document.getElementById('records-grid');
+  const pbs=getPBs();
+  const keys=Object.keys(pbs).sort((a,b)=>PRUEBAS_ORDER.indexOf(a.split('|')[0])-PRUEBAS_ORDER.indexOf(b.split('|')[0]));
+  if(!keys.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="ei">⭐</div><p>Sin marcas aún.</p></div>';return;}
+  grid.innerHTML=keys.map(key=>{
+    const t=pbs[key];
+    return `<div class="record-card" onclick="openMarcaDetalle('${key}')">
+      <div class="record-event">${t.prueba}</div>
+      <div class="record-piscina">${t.piscina}</div>
+      <div class="record-time">${formatTime(t.tiempo)}</div>
+    </div>`;
+  }).join('');
+}
+
+window.openMarcaDetalle=(key)=>{
+  const pbs=getPBs();
+  const t=pbs[key]; if(!t)return;
+  const prueba=t.prueba,piscina=t.piscina;
+  const mins=MINIMAS[prueba];
+  const pKey=getMinKey(piscina);
+  const otraPiscina=piscina==='25m'?'50m':'25m';
+  const convFactor=CONV[prueba];
+  const tiempoConv=convFactor?convertTime(t.tiempo,prueba,piscina,otraPiscina):null;
+  const minRows=mins?['B','A','Esp'].map(tipo=>{
+    if(!mins[tipo])return'';
+    const minT=mins[tipo][pKey];
+    const conseguida=t.tiempo<=minT;
+    const pct=conseguida?100:Math.min(99,Math.max(0,(minT/t.tiempo)*100));
+    const label=tipo==='Esp'?'Mínima España':tipo==='A'?'Mínima A — Andalucía':'Mínima B — Andalucía';
+    const cc=tipo==='B'?'b':tipo==='A'?'a':'esp';
+    const cl=tipo==='Esp'?'E':tipo;
+    const diff=t.tiempo-minT;
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div class="min-circle ${conseguida?cc:'none'}">${conseguida?cl:'✕'}</div>
+        <div style="flex:1"><div style="font-size:.82rem;font-weight:600">${label}</div><div style="font-size:.72rem;color:var(--muted)">Objetivo: <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem">${formatTime(minT)}</span></div></div>
+        <span style="font-size:.75rem;color:${diff<=0?'var(--green)':'var(--red)'}">${diff<=0?'✓ '+formatTime(Math.abs(diff))+' abajo':'Faltan '+formatTime(Math.abs(diff))}</span>
+      </div>
+      <div class="prog-wrap"><div class="prog-bg"><div class="prog-fill ${conseguida?'done':''}" style="width:${pct}%"></div></div><span class="prog-pct">${pct.toFixed(0)}%</span></div>
+    </div>`;
+  }).join(''):'' ;
+
+  document.getElementById('marca-detalle-content').innerHTML=`
+    <div class="detail-header">
+      <div class="detail-prueba">${prueba}</div>
+      <div class="detail-pb-time">${formatTime(t.tiempo)}</div>
+      <div class="detail-meta">
+        <span>🏊 ${piscina}</span>
+        <span>📅 ${t.fecha}</span>
+        ${t.lugar?`<span>📍 ${t.lugar}</span>`:''}
+        <span>📋 ${t.tipo}</span>
+        ${convFactor?`<span>🔄 Equiv. ${otraPiscina}: <strong>${formatTime(tiempoConv)}</strong></span>`:''}
+        ${t.notas?`<span>📝 ${t.notas}</span>`:''}
+      </div>
+    </div>
+    <div class="section-title">Mínimas en ${piscina}</div>
+    ${minRows||'<p style="color:var(--muted);font-size:.82rem">Sin mínimas para esta prueba.</p>'}
+  `;
+  navigate('marca-detalle');
+};
+
+// ===== MÍNIMAS =====
+window.setMinPiscina=(p)=>{
+  minimasPiscina=p;
+  document.getElementById('ptoggle-25').classList.toggle('active',p==='25m');
+  document.getElementById('ptoggle-50').classList.toggle('active',p==='50m');
+  renderMinimas();
+};
+
+function renderMinimas(){
+  const el=document.getElementById('minimas-list');
+  const pKey=getMinKey(minimasPiscina);
+  el.innerHTML=PRUEBAS_ORDER.map(prueba=>{
+    const min=MINIMAS[prueba]; if(!min)return'';
+    const tiemposPr=state.tiempos.filter(t=>t.prueba===prueba&&t.piscina===minimasPiscina);
+    const tiemposPrOtra=state.tiempos.filter(t=>t.prueba===prueba&&t.piscina!==minimasPiscina);
+    let mb=null,mbConv=false;
+    if(tiemposPr.length){mb=tiemposPr.reduce((a,b)=>a.tiempo<b.tiempo?a:b);}
+    else if(tiemposPrOtra.length){
+      const mejor=tiemposPrOtra.reduce((a,b)=>a.tiempo<b.tiempo?a:b);
+      mb={...mejor,tiempo:convertTime(mejor.tiempo,prueba,mejor.piscina,minimasPiscina),original:mejor};
+      mbConv=true;
+    }
+    let circleClass='none',circleLabel='✕';
+    if(mb){
+      const mbT=mb.tiempo;
+      if(min.Esp&&mbT<=min.Esp[pKey]){circleClass='esp';circleLabel='E';}
+      else if(min.A&&mbT<=min.A[pKey]){circleClass='a';circleLabel='A';}
+      else if(min.B&&mbT<=min.B[pKey]){circleClass='b';circleLabel='B';}
+    }
+    // Progress hacia siguiente mínima no conseguida
+    let pct=0,progLabel='';
+    if(mb){
+      const mbT=mb.tiempo;
+      const tieneEsp=min.Esp&&mbT<=min.Esp[pKey];
+      const tieneA=min.A&&mbT<=min.A[pKey];
+      const tieneB=min.B&&mbT<=min.B[pKey];
+      if(tieneEsp){pct=100;progLabel='España ✓';}
+      else if(tieneA&&min.Esp){pct=Math.min(99,Math.max(0,(min.Esp[pKey]/mbT)*100));progLabel='→ España';}
+      else if(tieneB&&min.A){pct=Math.min(99,Math.max(0,(min.A[pKey]/mbT)*100));progLabel='→ Mín. A';}
+      else if(min.B){pct=Math.min(99,Math.max(0,(min.B[pKey]/mbT)*100));progLabel='→ Mín. B';}
+    }
+    const convNote=mbConv?`<span class="conv-note">~conv</span>`:'';
+    const safeId='mindet-'+prueba.replace(/[\s\.]/g,'_');
+    return `<div class="min-prueba-card">
+      <div class="min-prueba-header" onclick="toggleMinDetalle('${safeId}')">
+        <div class="min-circle ${circleClass}">${circleLabel}</div>
+        <div class="min-prueba-name">${prueba}</div>
+        <div class="min-prueba-time" style="color:${mb?'var(--gold)':'var(--muted)'}">${mb?formatTime(mb.tiempo):'—'}${convNote}</div>
+        <span style="color:var(--muted);margin-left:6px">›</span>
+      </div>
+      ${mb?`<div style="padding:0 16px 10px"><div class="prog-wrap"><div class="prog-bg"><div class="prog-fill ${pct>=100?'done':''}" style="width:${pct}%"></div></div><span class="prog-pct">${pct.toFixed(0)}%</span><span style="font-size:.65rem;color:var(--muted);margin-left:6px">${progLabel}</span></div></div>`:''}
+      <div class="min-prueba-detail" id="${safeId}">${buildMinDetalle(prueba,mb,mbConv,pKey,min)}</div>
+    </div>`;
+  }).join('');
+}
+
+window.toggleMinDetalle=(id)=>{
+  const el=document.getElementById(id);
+  if(el)el.classList.toggle('open');
+};
+
+function buildMinDetalle(prueba,mb,mbConv,pKey,min){
+  if(!mb)return'<p style="color:var(--muted);font-size:.82rem;padding:4px 0">Sin marca personal en esta piscina aún.</p>';
+  const rows=['B','A','Esp'].map(tipo=>{
+    if(!min[tipo])return'';
+    const minT=min[tipo][pKey];
+    const conseguida=mb.tiempo<=minT;
+    const diff=mb.tiempo-minT;
+    const pct=conseguida?100:Math.min(99,Math.max(0,(minT/mb.tiempo)*100));
+    const label=tipo==='Esp'?'Mínima España':tipo==='A'?'Mínima A — Andalucía':'Mínima B — Andalucía';
+    const cc=tipo==='B'?'b':tipo==='A'?'a':'esp';
+    const cl=tipo==='Esp'?'E':tipo;
+    return `<div class="min-row">
+      <div class="min-circle ${conseguida?cc:'none'}" style="width:24px;height:24px;font-size:.6rem">${conseguida?cl:'✕'}</div>
+      <div class="min-row-label">${label}<br><span style="font-size:.7rem;opacity:.7">${formatTime(minT)}</span></div>
+      <div>
+        <div class="prog-wrap" style="width:90px"><div class="prog-bg"><div class="prog-fill ${conseguida?'done':''}" style="width:${pct}%"></div></div><span class="prog-pct">${pct.toFixed(0)}%</span></div>
+        <div style="font-size:.7rem;margin-top:2px;color:${diff<=0?'var(--green)':'var(--red)'}">${diff<=0?'✓ '+formatTime(Math.abs(diff))+' abajo':'Faltan '+formatTime(Math.abs(diff))}</div>
+      </div>
+    </div>`;
+  }).join('');
+  const convNote=mbConv?`<div style="background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.2);border-radius:6px;padding:6px 10px;margin-bottom:10px;font-size:.75rem;color:var(--gold)">⚠️ MB convertida desde ${mb.original.piscina} (real: ${formatTime(mb.original.tiempo)})</div>`:'';
+  return `<div style="font-size:.75rem;color:var(--muted);margin-bottom:10px">Tu MB: <span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:1px">${formatTime(mb.tiempo)}</span></div>${convNote}${rows}`;
+}
+
+// ===== GENERIC MODAL =====
+window.openGenericModal=(title,body)=>{
+  document.getElementById('generic-modal-title').textContent=title;
+  document.getElementById('generic-modal-body').innerHTML=body;
+  document.getElementById('generic-modal').classList.add('show');
+};
+window.closeGenericModal=()=>document.getElementById('generic-modal').classList.remove('show');
+
+// ===== TOAST =====
+window.showToast=(msg)=>{
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+};
+
+document.getElementById('at-fecha').value=new Date().toISOString().slice(0,10);
+setSyncing(true);
+</script>
+</body>
+</html>
